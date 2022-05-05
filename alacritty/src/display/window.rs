@@ -135,7 +135,7 @@ fn create_gl_window<E>(
     flags: GlContextFlags,
     vsync: bool,
     dimensions: Option<PhysicalSize<u32>>,
-) -> Result<WindowedContext<PossiblyCurrent>> {
+    ) -> Result<WindowedContext<PossiblyCurrent>> {
     if let Some(dimensions) = dimensions {
         window = window.with_inner_size(dimensions);
     }
@@ -191,7 +191,7 @@ impl Window {
         size: Option<PhysicalSize<u32>>,
         #[cfg(all(feature = "wayland", not(any(target_os = "macos", windows))))]
         wayland_event_queue: Option<&EventQueue>,
-    ) -> Result<Window> {
+        ) -> Result<Window> {
         let identity = identity.clone();
         let mut window_builder = Window::get_platform_window(&identity, &config.window);
 
@@ -216,12 +216,12 @@ impl Window {
             GlContextFlags::DEEP_COLOR,
         ] {
             windowed_context = Some(create_gl_window(
-                window_builder.clone(),
-                event_loop,
-                flags,
-                !is_wayland,
-                size,
-            ));
+                    window_builder.clone(),
+                    event_loop,
+                    flags,
+                    !is_wayland,
+                    size,
+                    ));
             if windowed_context.as_ref().unwrap().is_ok() {
                 GL_CONTEXT_CREATION_FLAGS.store(flags.bits, Ordering::Relaxed);
                 break;
@@ -323,9 +323,9 @@ impl Window {
         #[cfg(feature = "x11")]
         let icon = {
             let decoder = Decoder::new(Cursor::new(WINDOW_ICON));
-            let (info, mut reader) = decoder.read_info().expect("invalid embedded icon");
-            let mut buf = vec![0; info.buffer_size()];
-            let _ = reader.next_frame(&mut buf);
+            let mut reader = decoder.read_info().expect("invalid embedded icon");
+            let mut buf = vec![0; reader.output_buffer_size()];
+            let info = reader.next_frame(&mut buf).unwrap();
             Icon::from_rgba(buf, info.width, info.height)
         };
 
@@ -341,11 +341,11 @@ impl Window {
         let builder = builder.with_window_icon(icon.ok());
 
         #[cfg(feature = "wayland")]
-        let builder = builder.with_app_id(identity.class.instance.to_owned());
+        let builder = builder.with_title(identity.class.instance.to_owned());
 
         #[cfg(feature = "x11")]
         let builder = builder
-            .with_class(identity.class.instance.to_owned(), identity.class.general.to_owned());
+            .with_name(identity.class.general.to_owned(), identity.class.instance.to_owned());
 
         #[cfg(feature = "x11")]
         let builder = match &window_config.gtk_theme_variant {
@@ -527,7 +527,7 @@ fn x_embed_window(window: &GlutinWindow, parent_id: std::os::raw::c_ulong) {
             PropModeReplace,
             [0, 1].as_ptr(),
             2,
-        );
+            );
 
         // Register new error handler.
         let old_handler = (xlib.XSetErrorHandler)(Some(xembed_error_handler));

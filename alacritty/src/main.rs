@@ -9,8 +9,8 @@
 // See https://msdn.microsoft.com/en-us/library/4cc7ya5b.aspx for more details.
 #![windows_subsystem = "windows"]
 
-#[cfg(not(any(feature = "x11", feature = "wayland", target_os = "macos", windows)))]
-compile_error!(r#"at least one of the "x11"/"wayland" features must be enabled"#);
+#[cfg(not(any(feature = "x11", feature = "wayland", feature = "kmsdrm", target_os = "macos", windows)))]
+compile_error!(r#"at least one of the "x11"/"wayland"/"kmsdrm" features must be enabled"#);
 
 #[cfg(target_os = "macos")]
 use std::env;
@@ -19,7 +19,7 @@ use std::path::PathBuf;
 use std::string::ToString;
 use std::{fs, process};
 
-use glutin::event_loop::EventLoop as GlutinEventLoop;
+use glutin::event_loop::EventLoopBuilder as GlutinEventLoop;
 #[cfg(all(feature = "x11", not(any(target_os = "macos", windows))))]
 use glutin::platform::unix::EventLoopWindowTargetExtUnix;
 use log::info;
@@ -56,7 +56,7 @@ use crate::cli::Options;
 #[cfg(unix)]
 use crate::cli::{MessageOptions, Subcommands};
 use crate::config::{monitor, UiConfig};
-use crate::event::{Event, Processor};
+use crate::event::{Processor};
 #[cfg(target_os = "macos")]
 use crate::macos::locale;
 
@@ -129,7 +129,7 @@ impl Drop for TemporaryFiles {
 /// config change monitor, and runs the main display loop.
 fn alacritty(options: Options) -> Result<(), String> {
     // Setup glutin event loop.
-    let window_event_loop = GlutinEventLoop::<Event>::with_user_event();
+    let window_event_loop = GlutinEventLoop::with_user_event().build();
 
     // Initialize the logger as soon as possible as to capture output from other subsystems.
     let log_file = logging::initialize(&options, window_event_loop.create_proxy())
@@ -139,7 +139,7 @@ fn alacritty(options: Options) -> Result<(), String> {
     info!("Version {}", env!("VERSION"));
 
     #[cfg(all(feature = "x11", not(any(target_os = "macos", windows))))]
-    info!("Running on {}", if window_event_loop.is_x11() { "X11" } else { "Wayland" });
+    info!("Running on {}", if window_event_loop.is_x11() { "X11" } else if window_event_loop.is_wayland() { "Wayland" } else { "KMS/DRM" });
     #[cfg(not(any(feature = "x11", target_os = "macos", windows)))]
     info!("Running on Wayland");
 
