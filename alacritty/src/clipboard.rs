@@ -5,7 +5,7 @@ use log::{debug, warn};
 
 use alacritty_terminal::term::ClipboardType;
 
-#[cfg(any(test, not(any(feature = "x11", target_os = "macos", windows))))]
+#[cfg(any(test, feature = "kmsdrm", not(any(feature = "x11", target_os = "macos", windows))))]
 use copypasta::nop_clipboard::NopClipboardContext;
 #[cfg(all(feature = "wayland", not(any(target_os = "macos", windows))))]
 use copypasta::wayland_clipboard;
@@ -40,7 +40,7 @@ impl Clipboard {
 
     /// Used for tests and to handle missing clipboard provider when built without the `x11`
     /// feature.
-    #[cfg(any(test, not(any(feature = "x11", target_os = "macos", windows))))]
+    #[cfg(any(test, feature = "kmsdrm", not(any(feature = "x11", target_os = "macos", windows))))]
     pub fn new_nop() -> Self {
         Self { clipboard: Box::new(NopClipboardContext::new().unwrap()), selection: None }
     }
@@ -52,10 +52,14 @@ impl Default for Clipboard {
         return Self { clipboard: Box::new(ClipboardContext::new().unwrap()), selection: None };
 
         #[cfg(all(feature = "x11", not(any(target_os = "macos", windows))))]
-        return Self {
-            clipboard: Box::new(ClipboardContext::new().unwrap()),
-            selection: Some(Box::new(X11ClipboardContext::<X11SelectionClipboard>::new().unwrap())),
-        };
+        if let Ok(x11_cb) = ClipboardContext::new() {
+            return Self {
+                clipboard: Box::new(x11_cb),
+                selection: Some(Box::new(X11ClipboardContext::<X11SelectionClipboard>::new().unwrap())),
+            };
+        } else {
+            return Self::new_nop();
+        }
 
         #[cfg(not(any(feature = "x11", target_os = "macos", windows)))]
         return Self::new_nop();

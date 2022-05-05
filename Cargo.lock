@@ -272,8 +272,6 @@ dependencies = [
 [[package]]
 name = "copypasta"
 version = "0.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4423d79fed83ebd9ab81ec21fa97144300a961782158287dc9bf7eddac37ff0b"
 dependencies = [
  "clipboard-win",
  "objc",
@@ -2277,7 +2275,7 @@ checksum = "c811ca4a8c853ef420abd8592ba53ddbbac90410fab6903b3e79972a631f7680"
 [[package]]
 name = "winit"
 version = "0.26.1"
-source = "git+https://github.com/StratusFearMe21/winit#3a13ea25dad106c8217858742308721464f76d66"
+source = "git+https://github.com/StratusFearMe21/winit#bf2fea07ce80d71e6790aa35bbe2a4c20bd0a6ec"
 dependencies = [
  "bitflags",
  "calloop",
